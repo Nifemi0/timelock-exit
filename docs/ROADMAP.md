@@ -50,7 +50,7 @@ Pick based on time left. In priority order:
 - [ ] Record the demo video (under 3 minutes) from [DEMO_SCRIPT.md](DEMO_SCRIPT.md)
 - [ ] Final README pass: addresses, hashes, screenshots
 - [ ] Fill in and submit [SUBMISSION.md](SUBMISSION.md) on DoraHacks
-- [ ] Fresh-clone check: `git clone --recurse-submodules`, `forge build`, `forge test` on a clean machine
+- [x] Fresh-clone check (15 Nov): cloned from GitHub with submodules (forge-std v1.17.0, OpenZeppelin v5.7.0, reactive-lib-omni v0.1.0); 16 of 16 tests pass. Repeat after the final commit
 
 ## After the buildathon
 
