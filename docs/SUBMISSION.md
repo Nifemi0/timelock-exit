@@ -11,9 +11,9 @@ Buildathon page: https://dorahacks.io/hackathon/reactive-omni-buildathon/detail
 
 ## Required items
 
-- [ ] Public repository link
-- [ ] Deployed contract addresses
-- [ ] Transaction hashes showing the full loop, from origin event to callback
+- [x] Public repository link
+- [x] Deployed contract addresses
+- [x] Transaction hashes showing the full loop, from origin event to callback
 - [ ] Demo video under three minutes
 
 ## Track
@@ -26,7 +26,7 @@ Do not enter "Every Second Counts": it requires latency measurements, and this p
 
 | Field | Value |
 |---|---|
-| Repository | |
+| Repository | https://github.com/Nifemi0/timelock-exit |
 | Demo video | |
 | Live app | |
 | TimelockSentinel (Reactive Lasna) | 0xa00b864fFBC6992195fFB649F5BC36a50fBD6D59 |

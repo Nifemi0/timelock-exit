@@ -19,7 +19,7 @@ Deadline: **5 December 2026, 21:00 (UTC+1)**. Plan to submit on 4 December and k
 
 - [x] Install Foundry, run `forge test -vv`, fix anything that fails
 - [ ] Register on DoraHacks
-- [ ] Create the public GitHub repo and push
+- [x] Create the public GitHub repo and push: https://github.com/Nifemi0/timelock-exit
 - [x] Get Base Sepolia ETH and lREACT
 - [x] Deploy and run the full loop once, following [DEPLOYMENT.md](DEPLOYMENT.md)
 - [x] Record all addresses and the five transaction hashes in the README

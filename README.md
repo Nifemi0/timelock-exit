@@ -62,7 +62,7 @@ A guard exits when either condition holds:
 Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
 
 ```bash
-git clone --recurse-submodules <this-repo-url>
+git clone --recurse-submodules https://github.com/Nifemi0/timelock-exit
 ```
 
 ```bash

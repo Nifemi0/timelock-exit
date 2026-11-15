@@ -47,4 +47,4 @@ export const explorer = {
   lasna: 'https://lasna.reactscan.net',
 }
 
-export const repoUrl = 'https://github.com/'
+export const repoUrl = 'https://github.com/Nifemi0/timelock-exit'
