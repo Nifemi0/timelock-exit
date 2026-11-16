@@ -33,7 +33,12 @@ export function Overview() {
   const { guard, position } = data
   const linked = data.mode === 'live'
 
-  const inFlight = !!item && item.matched && item.status === 'pending' && !exit
+  const unexited = !!item && item.matched && item.status === 'pending' && !exit
+  // A reactive exit lands within seconds of queueing. A matching change that has waited
+  // longer without one was almost certainly queued before the guard existed, and the
+  // guard only reacts to new CallScheduled events, so it will never fire for it.
+  const inFlight = unexited && now - item!.queuedAt < 90
+  const missed = unexited && !inFlight
   const latency = exit && item ? duration(exit.at - item.queuedAt) : undefined
   const ticked = presetsIn(guard.selectors)
 
@@ -70,6 +75,20 @@ export function Overview() {
         </b>{' '}
         returned to your wallet.{' '}
         {item ? `"${item.title}" was queued on ${position.vaultName}; your guard redeemed your shares before it could take effect.` : 'Your guard redeemed your shares.'}
+      </>
+    )
+  } else if (missed) {
+    headline = (
+      <>
+        Queued before
+        <br />
+        <em>your guard.</em>
+      </>
+    )
+    lede = (
+      <>
+        "{item!.title}" matches your rules but was queued before your guard was armed, so it cannot trigger an
+        exit. Guards react to new changes only. <b>Withdraw from {position.vaultName} yourself</b> if you want out.
       </>
     )
   } else if (inFlight) {

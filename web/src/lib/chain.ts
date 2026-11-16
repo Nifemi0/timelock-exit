@@ -1,5 +1,5 @@
 import { createPublicClient, decodeEventLog, decodeFunctionData, http, type Abi, type Address, type Hex } from 'viem'
-import { baseExplorerApi, baseRpc, destination, historyFromBlock, lasna, lookbackBlocks, type LiveAddresses } from './config'
+import { baseRpc, destination, historyFromBlock, lasna, type LiveAddresses } from './config'
 import { exitGuardAbi, knownCallsAbi, sentinelAbi, timelockAbi, tokenAbi, vaultAbi } from './abis'
 import { short } from './format'
 import type { ExitRecord, Guard, Position, QueueItem, QueueStatus } from './types'
@@ -8,16 +8,18 @@ import type { ExitRecord, Guard, Position, QueueItem, QueueStatus } from './type
  * Chain access for live mode.
  *
  * State (balances, guards, timelock status) is read from RPC. Event history comes from
- * the Blockscout explorer API, which returns every log since deployment in one call; a
- * plain RPC block scan is the fallback, but public RPCs cap log ranges, so it only covers
- * recent blocks. The Reactive-side transaction for an exit is found by jumping to the
- * Lasna block nearest the exit's timestamp and searching a small window around it.
+ * /history.json, a snapshot built by web/scripts/snapshot.mjs (regenerate it after
+ * queueing a change), plus a live RPC scan of only the blocks after the snapshot. Public RPCs
+ * cap log ranges and free indexers rate-limit, so neither can rebuild history per visit.
  */
 
 const base = createPublicClient({ chain: destination, transport: http(baseRpc) })
 const reactive = createPublicClient({ chain: lasna, transport: http() })
 
-const CHUNK = 9_000n
+/** PublicNode's eth_getLogs limit on Base Sepolia. */
+const CHUNK = 50_000n
+/** Live scan covers at most this many chunks after the snapshot (about 5.5 hours). Regenerate the snapshot with `node web/scripts/snapshot.mjs` after queueing a change. */
+const MAX_TAIL_CHUNKS = 2n
 const SKIP_REASONS = ['Guard not armed', 'Nothing to redeem', 'Redeem failed']
 
 interface RawLog {
@@ -25,82 +27,84 @@ interface RawLog {
   data: Hex
   blockNumber: bigint
   transactionHash: Hex
+  logIndex?: number
   /** Unix seconds, when the source provides it. */
   timestamp?: number
 }
 
 // ---------------------------------------------------------------------------
-// Event history
+// Event history: snapshot + live tail
 // ---------------------------------------------------------------------------
 
-interface ExplorerLog {
-  topics: Array<Hex | null>
+interface SnapshotLog {
+  topics: [Hex, ...Hex[]]
   data: Hex
   blockNumber: Hex
-  timeStamp: Hex
   transactionHash: Hex
+  logIndex: Hex
+  timestamp: number
 }
 
-async function explorerLogs(address: Address): Promise<RawLog[]> {
-  // In production, go through the cached /api/logs proxy (see web/api/logs.ts) so many
-  // visitors do not trip Blockscout's per-visitor rate limit. The dev server has no
-  // functions, so call Blockscout directly there.
-  const url = import.meta.env.PROD
-    ? `/api/logs?address=${address}`
-    : `${baseExplorerApi}?module=logs&action=getLogs&fromBlock=${historyFromBlock}&toBlock=latest&address=${address}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Explorer returned ${res.status}`)
-  const body = (await res.json()) as { status: string; message: string; result: ExplorerLog[] | string }
-  if (body.status !== '1') {
-    if (/no records/i.test(body.message)) return []
-    throw new Error(`Explorer: ${body.message}`)
-  }
-  return (body.result as ExplorerLog[]).map(l => ({
-    topics: l.topics.filter((t): t is Hex => t !== null) as [Hex, ...Hex[]],
-    data: l.data,
-    blockNumber: BigInt(l.blockNumber),
-    transactionHash: l.transactionHash,
-    timestamp: Number(BigInt(l.timeStamp)),
-  }))
+interface Snapshot {
+  base: { toBlock: number; logs: Record<string, SnapshotLog[]> }
+  lasna: { toBlock: number; exitRequested: SnapshotLog[] }
 }
 
-async function rpcLogs(address: Address): Promise<RawLog[]> {
+const fromSnapshot = (l: SnapshotLog): RawLog => ({
+  topics: l.topics,
+  data: l.data,
+  blockNumber: BigInt(l.blockNumber),
+  transactionHash: l.transactionHash,
+  logIndex: Number(BigInt(l.logIndex)),
+  timestamp: l.timestamp,
+})
+
+let snapshotPromise: Promise<Snapshot | null> | undefined
+function snapshot(): Promise<Snapshot | null> {
+  snapshotPromise ??= fetch(`${import.meta.env.BASE_URL}history.json`, { cache: 'no-cache' })
+    .then(r => (r.ok ? (r.json() as Promise<Snapshot>) : null))
+    .catch(() => null)
+  return snapshotPromise
+}
+
+/** Logs after the snapshot, scanned live in RPC-sized chunks. */
+async function tailLogs(address: Address, after: bigint): Promise<RawLog[]> {
   const latest = await base.getBlockNumber()
-  const from = latest > lookbackBlocks ? latest - lookbackBlocks : 0n
+  let from = after + 1n
+  if (latest - from > CHUNK * MAX_TAIL_CHUNKS) from = latest - CHUNK * MAX_TAIL_CHUNKS
   const windows: Array<[bigint, bigint]> = []
   for (let start = from; start <= latest; start += CHUNK) {
     const end = start + CHUNK - 1n
     windows.push([start, end > latest ? latest : end])
   }
-  const logs = (
-    await Promise.all(windows.map(([fromBlock, toBlock]) => base.getLogs({ address, fromBlock, toBlock })))
-  ).flat()
+  const logs = (await Promise.all(windows.map(([fromBlock, toBlock]) => base.getLogs({ address, fromBlock, toBlock })))).flat()
   return logs.map(l => ({
     topics: l.topics as [Hex, ...Hex[]],
     data: l.data,
     blockNumber: l.blockNumber,
     transactionHash: l.transactionHash,
+    logIndex: l.logIndex,
   }))
 }
 
-/** Last good history per contract. Logs are append-only, so an older copy is never wrong, only short. */
-const historyCache = new Map<string, RawLog[]>()
+/** Last good tail per contract, so a failed refresh never blanks the page. */
+const tailCache = new Map<string, RawLog[]>()
 
-/**
- * Every log a contract emitted since deployment. Explorer first; if that fails, keep the
- * last good copy rather than blanking the page; only with no copy at all fall back to a
- * recent-blocks RPC scan.
- */
+/** Every log a contract emitted since deployment: snapshot, then the live tail. */
 async function history(address: Address): Promise<RawLog[]> {
+  const key = address.toLowerCase()
+  const snap = await snapshot()
+  const known = (snap?.base.logs[key] ?? []).map(fromSnapshot)
+  const after = snap ? BigInt(snap.base.toBlock) : historyFromBlock - 1n
+  let tail: RawLog[]
   try {
-    const logs = await explorerLogs(address)
-    historyCache.set(address.toLowerCase(), logs)
-    return logs
+    tail = await tailLogs(address, after)
+    tailCache.set(key, tail)
   } catch {
-    const cached = historyCache.get(address.toLowerCase())
-    if (cached) return cached
-    return rpcLogs(address)
+    tail = tailCache.get(key) ?? []
   }
+  const seen = new Set(known.map(l => `${l.transactionHash}:${l.logIndex}`))
+  return [...known, ...tail.filter(l => !seen.has(`${l.transactionHash}:${l.logIndex}`))]
 }
 
 /** Decode the logs that match `eventName`, skipping anything else the contract emitted. */
@@ -234,6 +238,16 @@ const reactiveCache = new Map<string, Hex>()
  */
 async function reactiveTxs(a: LiveAddresses, user: Address, exits: Array<{ operationId: Hex; at: number }>): Promise<Map<Hex, Hex>> {
   const found = new Map<Hex, Hex>()
+
+  // ExitRequested topics: [signature, timelock, operationId, user]. The snapshot covers
+  // everything up to its block; only newer exits need the live search below.
+  const snap = await snapshot()
+  for (const l of snap?.lasna.exitRequested ?? []) {
+    const op = l.topics[2]
+    const who = l.topics[3]
+    if (op && who && same(`0x${who.slice(-40)}`, user)) reactiveCache.set(`${user}:${op}`, l.transactionHash)
+  }
+
   const missing = exits.filter(e => {
     const hit = reactiveCache.get(`${user}:${e.operationId}`)
     if (hit) found.set(e.operationId, hit)

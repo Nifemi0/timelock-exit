@@ -51,7 +51,13 @@ Fill in the five `VITE_*` addresses and restart the dev server. The app then rea
 
 Live at **https://timelock-exit.vercel.app**. The Vercel project builds `web/` from `main` on every push; the five `VITE_*` addresses are set as project environment variables.
 
-`api/logs.ts` is a Vercel function that proxies Blockscout's log API with edge caching, so many visitors share one upstream request instead of each hitting Blockscout's per-visitor rate limit. The dev server has no functions and calls Blockscout directly.
+**Event history** comes from `public/history.json`, a snapshot of every relevant event, plus a live RPC scan of at most the last two 50,000-block chunks after it. Public RPCs cap log ranges (PublicNode: 50,000 blocks on Base Sepolia; Lasna: 30,000) and free indexers such as Blockscout rate-limit under load, so the app cannot rebuild history on every visit.
+
+**After queueing a change on the timelock, regenerate the snapshot and commit it**, which redeploys the site:
+
+```bash
+node web/scripts/snapshot.mjs
+```
 
 ### Other hosts
 

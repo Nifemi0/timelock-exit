@@ -18,6 +18,8 @@ Hackathon entry for the Reactive Omni Buildathon ("Set It and Forget It" track).
 - **Deployment order is fixed:** sentinel, then guard (its sender is immutable), then `setExitGuard`.
 - A contract cannot inherit both `AbstractReactive` and `AbstractCallback`.
 
+- **After queueing a change on the demo timelock, run `node web/scripts/snapshot.mjs` and commit `web/public/history.json`.** The app reads history from that snapshot plus a short live tail; an exit older than about 5.5 hours that is not in the snapshot will not show.
+
 ## Conventions
 
 - Solidity 0.8.30, `evm_version = cancun`, named imports, custom errors (no revert strings).
