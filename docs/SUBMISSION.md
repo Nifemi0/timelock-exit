@@ -28,7 +28,7 @@ Do not enter "Every Second Counts": it requires latency measurements, and this p
 |---|---|
 | Repository | https://github.com/Nifemi0/timelock-exit |
 | Demo video | |
-| Live app | |
+| Live app | https://timelock-exit.vercel.app (proven exit: https://timelock-exit.vercel.app/app?account=0x5f5cE7c47f5382e4198870D1904650BF1b88232F) |
 | TimelockSentinel (Reactive Lasna) | 0xa00b864fFBC6992195fFB649F5BC36a50fBD6D59 |
 | ExitGuard (Base Sepolia) | 0x85703e534Fd619eE55484D59259F84fC0340Cd2a |
 | Demo TimelockController (Base Sepolia) | 0x65503cE4DeC92399b0d1dc08e2b53fc47c03901e |

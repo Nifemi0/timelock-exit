@@ -34,7 +34,7 @@ Direction in [DESIGN.md](DESIGN.md). Built ahead of schedule; see [web/README.md
 - [x] Landing, Overview, Guards, Activity and How it works pages
 - [x] Demo mode with sample data, checked at desktop and phone widths
 - [ ] Fill in `web/.env.local` after deployment and test the live-data path end to end
-- [ ] Deploy as a static site
+- [x] Hosted on Vercel: https://timelock-exit.vercel.app (auto-deploys from `main`)
 
 ## Phase 3: depth (28 to 30 Nov)
 

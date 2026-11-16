@@ -49,6 +49,12 @@ Fill in the five `VITE_*` addresses and restart the dev server. The app then rea
 
 ## Deploy
 
+Live at **https://timelock-exit.vercel.app**. The Vercel project builds `web/` from `main` on every push; the five `VITE_*` addresses are set as project environment variables.
+
+`api/logs.ts` is a Vercel function that proxies Blockscout's log API with edge caching, so many visitors share one upstream request instead of each hitting Blockscout's per-visitor rate limit. The dev server has no functions and calls Blockscout directly.
+
+### Other hosts
+
 Any static host works. `vercel.json` rewrites every route to `index.html` so deep links load.
 
 ```bash

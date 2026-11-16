@@ -2,6 +2,8 @@
 
 **Leave before the upgrade lands.** Timelock Exit watches a protocol's governance timelock for you. The moment a change you care about is queued, it redeems your deposit back to your wallet, before the delay expires and the change takes effect.
 
+**Live app: https://timelock-exit.vercel.app** · see the proven exit at [/app?account=0x5f5c…232F](https://timelock-exit.vercel.app/app?account=0x5f5cE7c47f5382e4198870D1904650BF1b88232F)
+
 Built for the [Reactive Omni Buildathon](https://dorahacks.io/hackathon/reactive-omni-buildathon/detail), "Set It and Forget It" track.
 
 > **Status: deployed to testnet and proven end to end on 15 Nov 2026.** A queued 99% exit-fee change was matched on Reactive Lasna and the depositor's 1,000 dUSD was redeemed on Base Sepolia **about 1 second after queueing**, with nearly 5 minutes of the timelock delay still left. 16 of 16 local tests pass (Foundry 1.9.0, solc 0.8.30). See [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -119,7 +121,7 @@ docs/
 
 Step 3 is in block 59289096 and step 5 in block 59289104: 8 blocks, about 1 second by block timestamp. The change could not execute until 300 seconds after step 3.
 
-The web app shows this position read-only at `/app?account=0x5f5cE7c47f5382e4198870D1904650BF1b88232F`.
+The live app shows this position read-only at [timelock-exit.vercel.app/app?account=0x5f5c…232F](https://timelock-exit.vercel.app/app?account=0x5f5cE7c47f5382e4198870D1904650BF1b88232F).
 
 ## Known limitations
 
