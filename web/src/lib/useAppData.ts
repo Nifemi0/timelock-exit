@@ -49,7 +49,8 @@ export function useAppData(): AppData {
   const query = useQuery({
     queryKey: [APP_QUERY_KEY, address ?? null],
     enabled: live !== undefined,
-    refetchInterval: 4_000,
+    // Fast enough to show an exit within seconds, slow enough to stay inside free RPC limits.
+    refetchInterval: 6_000,
     queryFn: async (): Promise<AppData> => {
       const a = live!
       const guard = address ? await fetchGuard(a, address) : NO_GUARD

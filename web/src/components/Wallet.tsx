@@ -16,14 +16,33 @@ export function Wallet() {
   }
 
   const connector = connectors[0]
+  const hasWallet = typeof window !== 'undefined' && 'ethereum' in window
+  const rejected = !!error && /reject|denied|cancel/i.test(error.message)
+  const label = isPending
+    ? 'Connecting'
+    : !hasWallet
+      ? 'No wallet found'
+      : rejected
+        ? 'Connect wallet'
+        : error
+          ? 'Retry connect'
+          : 'Connect wallet'
   return (
     <button
       className="wallet tag w"
       disabled={!connector || isPending}
       onClick={() => connector && connect({ connector })}
-      title={error ? error.message.split('\n')[0] : 'Connect a browser wallet'}
+      title={
+        !hasWallet
+          ? 'Install a browser wallet such as MetaMask'
+          : rejected
+            ? 'The connection request was declined. Click to try again.'
+            : error
+              ? error.message.split('\n')[0]
+              : 'Connect a browser wallet'
+      }
     >
-      {isPending ? 'Connecting' : error ? 'No wallet found' : 'Connect wallet'}
+      {label}
     </button>
   )
 }

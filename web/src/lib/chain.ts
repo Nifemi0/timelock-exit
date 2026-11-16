@@ -42,7 +42,12 @@ interface ExplorerLog {
 }
 
 async function explorerLogs(address: Address): Promise<RawLog[]> {
-  const url = `${baseExplorerApi}?module=logs&action=getLogs&fromBlock=${historyFromBlock}&toBlock=latest&address=${address}`
+  // In production, go through the cached /api/logs proxy (see web/api/logs.ts) so many
+  // visitors do not trip Blockscout's per-visitor rate limit. The dev server has no
+  // functions, so call Blockscout directly there.
+  const url = import.meta.env.PROD
+    ? `/api/logs?address=${address}`
+    : `${baseExplorerApi}?module=logs&action=getLogs&fromBlock=${historyFromBlock}&toBlock=latest&address=${address}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Explorer returned ${res.status}`)
   const body = (await res.json()) as { status: string; message: string; result: ExplorerLog[] | string }
@@ -78,11 +83,22 @@ async function rpcLogs(address: Address): Promise<RawLog[]> {
   }))
 }
 
-/** Every log a contract emitted since deployment: explorer first, recent RPC scan as fallback. */
+/** Last good history per contract. Logs are append-only, so an older copy is never wrong, only short. */
+const historyCache = new Map<string, RawLog[]>()
+
+/**
+ * Every log a contract emitted since deployment. Explorer first; if that fails, keep the
+ * last good copy rather than blanking the page; only with no copy at all fall back to a
+ * recent-blocks RPC scan.
+ */
 async function history(address: Address): Promise<RawLog[]> {
   try {
-    return await explorerLogs(address)
+    const logs = await explorerLogs(address)
+    historyCache.set(address.toLowerCase(), logs)
+    return logs
   } catch {
+    const cached = historyCache.get(address.toLowerCase())
+    if (cached) return cached
     return rpcLogs(address)
   }
 }
