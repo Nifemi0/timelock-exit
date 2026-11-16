@@ -121,7 +121,7 @@ export function Overview() {
         <div className="stats">
           <div className="stat">
             <span className="tag">[ Change executes in ]</span>
-            <span className="num">{item && item.status === 'pending' ? clock(item.executesAt - now) : '--:--'}</span>
+            <span className="num">{item && item.status === 'pending' ? (now >= item.executesAt ? 'Ready' : clock(item.executesAt - now)) : '--:--'}</span>
           </div>
           <div className="stat">
             <span className="tag">[ Exit latency ]</span>

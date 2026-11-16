@@ -40,7 +40,17 @@ export const live: LiveAddresses | undefined =
  */
 export const baseRpc: string = env.VITE_BASE_SEPOLIA_RPC || 'https://base-sepolia-rpc.publicnode.com'
 
+/** Fallback only: how far back to scan blocks if the explorer API is unreachable. */
 export const lookbackBlocks = BigInt(Number(env.VITE_LOOKBACK_BLOCKS) > 0 ? Number(env.VITE_LOOKBACK_BLOCKS) : 50_000)
+
+/**
+ * First Base Sepolia block to read history from. Defaults to just before the
+ * 15 Nov 2026 deployment (the timelock was created in block 59288812).
+ */
+export const historyFromBlock = BigInt(Number(env.VITE_FROM_BLOCK) > 0 ? Number(env.VITE_FROM_BLOCK) : 59_288_000)
+
+/** Etherscan-compatible Blockscout API for Base Sepolia: full log history in one call, CORS open. */
+export const baseExplorerApi = 'https://base-sepolia.blockscout.com/api'
 
 export const explorer = {
   base: 'https://sepolia.basescan.org',
