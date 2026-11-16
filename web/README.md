@@ -43,7 +43,7 @@ Fill in the five `VITE_*` addresses and restart the dev server. The app then rea
 - Type check and production build pass.
 - All five pages and the 404 page were checked in a browser at desktop and phone widths, in demo mode, with no console errors.
 - **Live reads are verified** against the 15 Nov 2026 testnet deployment: Overview and Activity show the real exit, latency, countdown and all three proof links, with no console errors.
-- **Sending transactions from the UI has not been tested yet** (arming, approving, depositing). The same calls worked from the command line.
+- **Wallet actions verified** on the hosted site with MetaMask (16 Nov 2026): mint, deposit (approve plus deposit), approve shares and arm all succeeded, and a queued fee change then redeemed the wallet automatically.
 - Add `?account=0x…` to any app URL to view an address read-only without a wallet.
 - Only browser-extension wallets (such as MetaMask) are supported.
 

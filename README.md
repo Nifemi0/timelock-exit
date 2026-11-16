@@ -119,6 +119,8 @@ docs/
 | 4 | Rule matched, exit requested (`ExitRequested`) | Reactive Lasna | [`0xe887…7a79`](https://lasna.reactscan.net/tx/0xe88744158aa14cdc8d08737cc25b18425a029d4ff08b907ea80b21a331607a79) |
 | 5 | Shares redeemed to the depositor (`Exited`) | Base Sepolia | [`0x1680…9869`](https://sepolia.basescan.org/tx/0x1680900f6cec81d1493cbc4f9f62eea7fddbc1871b896c016f5dfa82b8359869) |
 
+**Second run, through the hosted app (16 Nov 2026).** A separate MetaMask wallet minted, deposited, approved and armed a guard using only the app's buttons. A queued `setExitFee(9800)` ([`0x9943…6dde`](https://sepolia.basescan.org/tx/0x99431590f4254ad977a4729729715dcc75880191348b41bb15c8dea062dc6dde)) was matched on Lasna ([`0x26ac…e3ca`](https://lasna.reactscan.net/tx/0x26acefc4124270cc0bf78e66c49f1630fc83d28f671171f6e0ec0504e191e3ca)) and the 1,000 dUSD were redeemed about 2 seconds later. The first wallet's guard fired on the same change and emitted `ExitSkipped` (nothing left to redeem), as designed.
+
 Step 3 is in block 59289096 and step 5 in block 59289104: 8 blocks, about 1 second by block timestamp. The change could not execute until 300 seconds after step 3.
 
 The live app shows this position read-only at [timelock-exit.vercel.app/app?account=0x5f5c…232F](https://timelock-exit.vercel.app/app?account=0x5f5cE7c47f5382e4198870D1904650BF1b88232F).

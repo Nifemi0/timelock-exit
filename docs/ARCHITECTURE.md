@@ -70,6 +70,6 @@ Confirmed on the live network the same day (transactions in the README):
 - **Subscribing from inside `react()` works.** The sentinel mirrored a guard and subscribed to the timelock about 3 seconds after `arm()`.
 - **End-to-end latency** from `CallScheduled` to `Exited` was about 1 second (8 Base Sepolia blocks).
 
-Not yet exercised live: `disarm()` and the unsubscribe path, `ExitSkipped`, and a second depositor on the same timelock. All are covered by local tests.
+Also confirmed live on 16 Nov: two depositors on one timelock, and `ExitSkipped` when a guard fires with nothing left to redeem. Not yet exercised live: `disarm()` and the unsubscribe path (covered by local tests).
 
 **RPC note.** The official Base Sepolia endpoint (`sepolia.base.org`) limits `eth_getLogs` to 200 blocks. The web app defaults to PublicNode, which allowed 50,000-block ranges when tested.

@@ -11,7 +11,7 @@ Deadline: **5 December 2026, 21:00 (UTC+1)**. Plan to submit on 4 December and k
 - [x] Tests run and passing: 16 of 16 (Foundry 1.9.0)
 - [x] Deployed to testnet and full loop proven (15 Nov): exit about 1 s after queueing
 - [x] Frontend built: five pages in `web/`, running on demo data
-- [x] Frontend connected to deployed contracts (read side checked; wallet transactions from the UI not yet tested)
+- [x] Frontend connected to deployed contracts; every wallet action (mint, deposit, approve, arm) tested from the hosted app with MetaMask on 16 Nov, ending in an automatic exit
 - [ ] Demo video
 - [ ] Registered and submitted on DoraHacks
 
