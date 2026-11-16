@@ -7,7 +7,7 @@ import { exitGuardAbi, tokenAbi, vaultAbi } from '../lib/abis'
 import { destination, live } from '../lib/config'
 import { amount, short } from '../lib/format'
 import { MAX_SELECTORS, presets, presetsIn, selectorsFor, type RuleId } from '../lib/rules'
-import { useAppData } from '../lib/useAppData'
+import { useAppData, useViewedAddress } from '../lib/useAppData'
 import { useTx } from '../lib/useTx'
 import { wagmiConfig } from '../lib/wagmi'
 
@@ -16,6 +16,7 @@ const chainId = destination.id
 export function Guards() {
   const data = useAppData()
   const { address } = useAccount()
+  const viewed = useViewedAddress()
   const { state, run, note } = useTx()
   const { guard, position } = data
 
@@ -34,14 +35,16 @@ export function Guards() {
   const selectors = selectorsFor(rules)
   const hasRule = anyCall || selectors.length > 0
   const busy = state.pending !== undefined
-  const canSend = live !== undefined && address !== undefined && !busy
+  const canSend = live !== undefined && address !== undefined && !viewed.readOnly && !busy
   const approved = position.shareAllowance > 0n && position.shareAllowance >= position.shares
 
   const blocked = !live
     ? 'Demo mode: connect deployed contracts to send transactions.'
     : !address
       ? 'Connect a wallet to send transactions.'
-      : undefined
+      : viewed.readOnly
+        ? 'Read-only view of another account. Open Guards without ?account to manage your own.'
+        : undefined
 
   const toggle = (id: RuleId) => setRules(r => (r.includes(id) ? r.filter(x => x !== id) : [...r, id]))
 
@@ -56,7 +59,7 @@ export function Guards() {
 
   async function arm() {
     const a = live
-    if (!a || !address) return note(blocked ?? '')
+    if (!a || !address || viewed.readOnly) return note(blocked ?? '')
     await run(guard.armed ? 'Guard updated' : 'Guard armed', () =>
       writeContract(wagmiConfig, {
         chainId,
@@ -70,7 +73,7 @@ export function Guards() {
 
   async function approveShares() {
     const a = live
-    if (!a || !address) return note(blocked ?? '')
+    if (!a || !address || viewed.readOnly) return note(blocked ?? '')
     await run('Shares approved', () =>
       writeContract(wagmiConfig, {
         chainId,
@@ -84,7 +87,7 @@ export function Guards() {
 
   async function disarm() {
     const a = live
-    if (!a || !address) return note(blocked ?? '')
+    if (!a || !address || viewed.readOnly) return note(blocked ?? '')
     await run('Guard disarmed', () =>
       writeContract(wagmiConfig, {
         chainId,
@@ -98,7 +101,7 @@ export function Guards() {
 
   async function mint() {
     const a = live
-    if (!a || !address) return note(blocked ?? '')
+    if (!a || !address || viewed.readOnly) return note(blocked ?? '')
     await run('1,000 test tokens minted', () =>
       writeContract(wagmiConfig, {
         chainId,
@@ -112,7 +115,7 @@ export function Guards() {
 
   async function depositTokens() {
     const a = live
-    if (!a || !address) return note(blocked ?? '')
+    if (!a || !address || viewed.readOnly) return note(blocked ?? '')
     let value: bigint
     try {
       value = parseUnits(deposit.trim(), position.decimals)

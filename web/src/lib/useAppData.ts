@@ -31,15 +31,19 @@ const EMPTY: AppData = {
 export const APP_QUERY_KEY = 'app-data'
 
 /**
- * The address whose guard and exits are shown: the connected wallet, or a read-only
- * `?account=0x…` from the URL so anyone can inspect a position without a wallet.
+ * The address whose guard and exits are shown. An explicit `?account=0x…` in the URL wins,
+ * read-only, so a shared link shows the same position to everyone, wallet or not. Without
+ * it, the connected wallet is shown.
  */
 export function useViewedAddress(): { address?: Address; readOnly: boolean } {
   const { address } = useAccount()
   const [params] = useSearchParams()
-  if (address) return { address, readOnly: false }
   const param = params.get('account')
-  return param && isAddress(param) ? { address: getAddress(param), readOnly: true } : { readOnly: false }
+  if (param && isAddress(param)) {
+    const viewed = getAddress(param)
+    return { address: viewed, readOnly: !address || viewed !== getAddress(address) }
+  }
+  return address ? { address, readOnly: false } : { readOnly: false }
 }
 
 /** Everything the pages render: demo data until contracts are configured, then live chain reads. */
